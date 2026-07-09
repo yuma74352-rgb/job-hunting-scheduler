@@ -1,4 +1,7 @@
-Flask
-firebase-admin
+fastapi
+uvicorn
 gunicorn
+firebase-admin
 python-dotenv
+jinja2
+python-multipart
