@@ -1,0 +1,6 @@
+*.json
+job-hunting-scheduler-3ea77-firebase-adminsdk-fbsvc-63cf5ff40f*.json
+.env
+__pycache__/
+*.pyc
+.DS_Store

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+
+
+<head>
+    <meta charset="UTF-8">
+</head>
+
+
+<body>
+    <h1>就活スケジュール管理アプリ</h1>
+
+
+    <div style="background: #f0f0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px">
+        <div id="auth-status" style="font-weight: bold; margin-bottom: 10px;">状態を確認中...</div>
+        <button id="btn-login" style="display: none; padding: 5px 10px; cursor: pointer;">Googleでログイン</button>
+        <button id="btn-logout" style="display: none; padding: 5px 10px; cursor: pointer;">ログアウト</button>
+    </div>
+
+
+    <p>スケジュール入力</p>
+
+
+    <form id="add-event-form" action = "/add" method = "post">
+        <input type="hidden" id="form-token" name="id_token" value="">
+        <div>
+            <label for = "event_date">日付</label>
+            <input type = "date" id = "event_date" name = "event_date">
+        </div>
+
+        <div>
+            <label for = "event_time">時間</label>
+            <input type = "time" id = "event_time" name = "event_time">
+        </div>
+
+
+        <div>
+            <label for = "event_name">イベント名</label>
+            <input type = "text" id = "event_name" name = "event_name" placeholder = "例：○○会社説明会" autocomplete="off">
+
+        </div>
+
+
+        <div>
+            <label for = "event_tag">種別:</label>
+            <select id = "event_tag" name = "event_tag">
+                <option value = '説明会/その他'>説明会/その他</option>
+                <option value = "ES締め切り">ES締め切り</option>
+                <option value = "適性検査/テスト">適性検査/テスト</option>
+                <option value = "面接">面接</option>
+            </select>
+        </div>
+
+
+       <div>
+            <label>優先度:</label><br>
+            
+            <input type = "radio" id = "color_red" name = "priority" value = "#ff4d4d" checked>
+            <label for = "color_red" style = "color: #ff4d4d; font-weight: bold;">最優先</label>
+            
+            <input type = "radio" id = "color_orange" name="priority" value = "#ff9f43">
+            <label for="color_orange" style = "color: #ff9f43; font-weight: bold;">優先</label>
+            
+            <input type = "radio" id = "color_yellow" name = "priority" value = "#fed330">
+            <label for = "color_yellow" style  = "color: #fed330; font-weight: bold;">普通</label>
+            
+            <input type = "radio" id = "color_green" name = "priority" value="#2ed573">
+            <label for = "color_green" style = "color: #2ed573; font-weight: bold;">ゆっくり</label>
+            
+            <input type = "radio" id = "color_blue" name = "priority" value="#1e90ff">
+            <label for = "color_blue" style = "color: #1e90ff; font-weight: bold;">その他</label>
+        </div>
+        
+
+        <button>予定を追加する</button>
+    </form>
+    
+
+    <hr> <h2>スケジュール一覧</h2>
+
+
+    <ol></ol>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        
+        const firebaseConfig = {
+            apiKey: "{{ firebase_api_key }}",
+            authDomain: "job-hunting-scheduler-3ea77.firebaseapp.com",
+            projectId: "job-hunting-scheduler-3ea77"
+        };
+         const app = initializeApp(firebaseConfig);
+         const auth = getAuth(app);
+         const provider = new GoogleAuthProvider();
+
+        onAuthStateChanged(auth, async (user) => {
+            const statusDiv = document.getElementById('auth-status');
+            const loginBtn = document.getElementById('btn-login');
+            const logoutBtn = document.getElementById('btn-logout');
+            
+            if (user) {
+                statusDiv.innerText = `ログイン中: ${user.displayName} さん`;
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'block';
+
+                try {
+                    const idToken = await user.getIdToken();
+                    fetchEvents(idToken);
+                } catch (error) {
+                    alert("トークンの取得に失敗しました:" + error.message);
+                }
+
+            } else {
+                statusDiv.innerText = "ログインしていません";
+                loginBtn.style.display = 'block';
+                logoutBtn.style.display = 'none';
+
+                clearEvents()
+            }
+        });
+
+
+        async function fetchEvents(idToken) {
+            try{
+                const formData = new FormData();
+                formData.append('id_token', idToken);
+
+                const response = await fetch('/get-events', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('データの取得に失敗しました');
+                }
+
+                const data = await response.json();
+                const events = data.events;
+
+                const ol = document.querySelector('ol');
+                ol.innerHTML = '';
+
+                if (events.length === 0) {
+                    ol.innerHTML = '<li>まだ予定が追加されていません</li>';
+                    return;
+                }
+
+                 events.forEach(event => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <strong>${event.date} ${event.time} - ${event.name}
+                        【種別: ${event.tag}】
+                        <span style="color: ${event.priority}; font-weight: bold;">●</span>
+                        <form onsubmit="return deleteEventWithToken(event, '${event.id}')" method="post" style="display: inline;">
+                            <button type="submit" style="cursor: pointer;">削除</button>
+                        </form>
+                    `;
+                    ol.appendChild(li);
+                });
+
+            } catch (error) {
+                console.error("エラー:", error);
+                alert("スケジュールの取得に失敗しました");
+            }
+        }
+
+        function clearEvents() {
+            const ol = document.querySelector('ol');
+            ol.innerHTML = '<li>ログインしていません。予定を表示するにはログインしてください。</li>';
+        }
+
+        document.getElementById('add-event-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const user = auth.currentUser;
+            if (!user) {
+                alert("ログインしてください");
+                return;
+            }
+
+            try {
+
+                const idToken = await user.getIdToken();
+                document.getElementById('form-token').value = idToken;
+                e.target.submit();
+            } catch (error) {
+                alert("トークンの取得に失敗しました:" + error.message);
+            }
+        });
+
+
+        window.deleteEventWithToken = async function(event, eventId) {
+            event.preventDefault();
+
+            const user = auth.currentUser;
+            if (!user) {
+                alert("ログインしてください")
+                return false;
+            }
+
+            try {
+                const idToken = await user.getIdToken();
+
+                const form = document.createElement('form');
+                form.method = 'POST'
+                form.action = `/delete/${eventId}?id_token=${encodeURIComponent(idToken)}`;
+                document.body.appendChild(form);
+                form.submit();
+            }
+            catch (error) {
+                alert("削除に失敗しました:" + error.message);
+            }
+            return false;
+        };
+        
+        document.getElementById('btn-login').addEventListener('click', () => {
+            signInWithPopup(auth, provider).catch((error) => {
+                alert("ログインに失敗しました:" + error.message);
+            });
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            signOut(auth).then(() => {
+                window.location.href = "/";
+            }).catch((error) => {
+                alert("ログアウトに失敗しました: " + error.message);
+            });
+        });
+    </script>
+</body>
+</html>
