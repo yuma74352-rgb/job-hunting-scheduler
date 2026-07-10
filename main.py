@@ -12,7 +12,7 @@ load_dotenv()
 
 
 if not firebase_admin._apps:
-    firebase_creds_json = os.environ.get("FIREBESE_CREDENTIALS")
+    firebase_creds_json = os.environ.get("FIREBASE_KEY")
 
     if firebase_creds_json:
         cred_dict = json.loads(firebase_creds_json)
