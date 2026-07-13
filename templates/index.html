@@ -85,10 +85,13 @@
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         
         const firebaseConfig = {
-            apiKey: "{{ firebase_api_key }}",
-            authDomain: "job-hunting-scheduler-3ea77.firebaseapp.com",
-            projectId: "job-hunting-scheduler-3ea77"
-        };
+            apiKey: "AIzaSyDJjJduuQHcdPQL24gGH1CaEvqKHgFDkyI",
+            authDomain: "job-hunting-scheduler-785cd.firebaseapp.com",
+            projectId: "job-hunting-scheduler-785cd",
+            storageBucket: "job-hunting-scheduler-785cd.firebasestorage.app",
+            messagingSenderId: "342704643069",
+            appId: "1:342704643069:web:c68b241384a91d90db9794"
+            };
          const app = initializeApp(firebaseConfig);
          const auth = getAuth(app);
          const provider = new GoogleAuthProvider();
@@ -203,7 +206,13 @@
 
                 const form = document.createElement('form');
                 form.method = 'POST'
-                form.action = `/delete/${eventId}?id_token=${encodeURIComponent(idToken)}`;
+                form.action = `/delete/${eventId};`
+
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.value = 'id_token';
+
+                form.appendChild(tokenInput);
                 document.body.appendChild(form);
                 form.submit();
             }

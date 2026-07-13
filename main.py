@@ -57,7 +57,7 @@ async def get_events(id_token: str = Form(...)):
         event_data["id"] = doc.id
         firebase_events.append(event_data)
 
-    sorted_events = sorted(firebase_events, key=lambda x: (x.get("data", ""), x.get("time", "")))
+    sorted_events = sorted(firebase_events, key=lambda x: (x.get("date", ""), x.get("time", "")))
 
     return {"events": sorted_events}
 
