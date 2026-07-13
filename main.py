@@ -91,7 +91,7 @@ async def add_event(
 
 
 @app.post("/delete/{event_id}")
-def delete_event(event_id: str, id_token: str = None):
+def delete_event(event_id: str, id_token: str = Form(None)):
     if not id_token:
         raise HTTPException(status_code=401, detail="認証トークンが必要です")
     
